@@ -23,7 +23,8 @@ use crate::{
     either::EitherError,
     transport::{ListenerEvent, Transport, TransportError},
 };
-use futures::{future::Either, prelude::*};
+use either::Either;
+use futures::{prelude::*};
 use multiaddr::Multiaddr;
 use std::{error, marker::PhantomPinned, pin::Pin, task::Context, task::Poll};
 

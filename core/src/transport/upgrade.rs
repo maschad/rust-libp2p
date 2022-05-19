@@ -35,6 +35,7 @@ use crate::{
     },
     Negotiated, PeerId,
 };
+use either::Either;
 use futures::{prelude::*, ready};
 use multiaddr::Multiaddr;
 use std::{
@@ -360,7 +361,7 @@ where
 }
 
 /// An inbound or outbound upgrade.
-type EitherUpgrade<C, U> = future::Either<InboundUpgradeApply<C, U>, OutboundUpgradeApply<C, U>>;
+type EitherUpgrade<C, U> = Either<InboundUpgradeApply<C, U>, OutboundUpgradeApply<C, U>>;
 
 /// A custom upgrade on an [`Authenticated`] transport.
 ///
@@ -399,7 +400,7 @@ where
             .map_err(|err| err.map(TransportUpgradeError::Transport))?;
         Ok(DialUpgradeFuture {
             future: Box::pin(future),
-            upgrade: future::Either::Left(Some(self.upgrade.clone())),
+            upgrade: either::Either::Left(Some(self.upgrade.clone())),
         })
     }
 
@@ -413,7 +414,7 @@ where
             .map_err(|err| err.map(TransportUpgradeError::Transport))?;
         Ok(DialUpgradeFuture {
             future: Box::pin(future),
-            upgrade: future::Either::Left(Some(self.upgrade.clone())),
+            upgrade: either::Either::Left(Some(self.upgrade.clone())),
         })
     }
 
@@ -478,7 +479,7 @@ where
     C: AsyncRead + AsyncWrite + Unpin,
 {
     future: Pin<Box<F>>,
-    upgrade: future::Either<Option<U>, (Option<PeerId>, OutboundUpgradeApply<C, U>)>,
+    upgrade: either::Either<Option<U>, (Option<PeerId>, OutboundUpgradeApply<C, U>)>,
 }
 
 impl<F, U, C, D> Future for DialUpgradeFuture<F, U, C>
@@ -497,7 +498,7 @@ where
 
         loop {
             this.upgrade = match this.upgrade {
-                future::Either::Left(ref mut up) => {
+                either::Either::Left(ref mut up) => {
                     let (i, c) = match ready!(TryFuture::try_poll(this.future.as_mut(), cx)
                         .map_err(TransportUpgradeError::Transport))
                     {
@@ -507,9 +508,9 @@ where
                     let u = up
                         .take()
                         .expect("DialUpgradeFuture is constructed with Either::Left(Some).");
-                    future::Either::Right((Some(i), apply_outbound(c, u, upgrade::Version::V1)))
+                    either::Either::Right((Some(i), apply_outbound(c, u, upgrade::Version::V1)))
                 }
-                future::Either::Right((ref mut i, ref mut up)) => {
+                either::Either::Right((ref mut i, ref mut up)) => {
                     let d = match ready!(
                         Future::poll(Pin::new(up), cx).map_err(TransportUpgradeError::Upgrade)
                     ) {
@@ -557,7 +558,7 @@ where
                 let event = event
                     .map(move |future| ListenerUpgradeFuture {
                         future: Box::pin(future),
-                        upgrade: future::Either::Left(Some(self.upgrade.clone())),
+                        upgrade: either::Either::Left(Some(self.upgrade.clone())),
                     })
                     .map_err(TransportUpgradeError::Transport);
                 Poll::Ready(Some(Ok(event)))
@@ -577,7 +578,7 @@ where
     U: InboundUpgrade<Negotiated<C>>,
 {
     future: Pin<Box<F>>,
-    upgrade: future::Either<Option<U>, (Option<PeerId>, InboundUpgradeApply<C, U>)>,
+    upgrade: either::Either<Option<U>, (Option<PeerId>, InboundUpgradeApply<C, U>)>,
 }
 
 impl<F, U, C, D> Future for ListenerUpgradeFuture<F, U, C>
@@ -596,7 +597,7 @@ where
 
         loop {
             this.upgrade = match this.upgrade {
-                future::Either::Left(ref mut up) => {
+                either::Either::Left(ref mut up) => {
                     let (i, c) = match ready!(TryFuture::try_poll(this.future.as_mut(), cx)
                         .map_err(TransportUpgradeError::Transport))
                     {
@@ -606,9 +607,9 @@ where
                     let u = up
                         .take()
                         .expect("ListenerUpgradeFuture is constructed with Either::Left(Some).");
-                    future::Either::Right((Some(i), apply_inbound(c, u)))
+                    either::Either::Right((Some(i), apply_inbound(c, u)))
                 }
-                future::Either::Right((ref mut i, ref mut up)) => {
+                either::Either::Right((ref mut i, ref mut up)) => {
                     let d = match ready!(TryFuture::try_poll(Pin::new(up), cx)
                         .map_err(TransportUpgradeError::Upgrade))
                     {

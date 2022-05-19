@@ -20,7 +20,8 @@
 
 use crate::upgrade::{InboundUpgrade, OutboundUpgrade, ProtocolName, UpgradeError};
 use crate::{connection::ConnectedPoint, Negotiated};
-use futures::{future::Either, prelude::*};
+use either::Either;
+use futures::{prelude::*};
 use log::debug;
 use multistream_select::{self, DialerSelectFuture, ListenerSelectFuture};
 use std::{iter, mem, pin::Pin, task::Context, task::Poll};

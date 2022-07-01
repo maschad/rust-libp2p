@@ -1612,7 +1612,6 @@ mod tests {
     use crate::test::{CallTraceBehaviour, MockBehaviour};
     use futures::executor::block_on;
     use futures::future::poll_fn;
-    use futures::future::Either;
     use futures::{executor, future, ready};
     use libp2p::core::{identity, multiaddr, transport, upgrade};
     use libp2p::plaintext;
